@@ -101,27 +101,27 @@ export const LeadModal: React.FC<LeadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div 
-        className="bg-[#0F172A] rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-blue-500/30 text-white transform transition-all animate-in fade-in zoom-in-95 duration-150"
+        className="bg-[#0F172A] rounded-t-3xl sm:rounded-2xl max-w-xl w-full max-h-[92vh] flex flex-col p-4 sm:p-6 shadow-2xl border border-blue-500/30 text-white transform transition-all animate-in fade-in zoom-in-95"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
-              <Briefcase className="w-5 h-5" />
+              <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">
+              <h2 className="text-base sm:text-lg font-bold text-white">
                 {initialLead ? 'Editar Oportunidade' : 'Novo Lead / Oportunidade'}
               </h2>
-              <p className="text-xs text-slate-400">DF DIGITAL CRM</p>
+              <p className="text-[10px] sm:text-xs text-slate-400">DF DIGITAL CRM</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -129,16 +129,16 @@ export const LeadModal: React.FC<LeadModalProps> = ({
 
         {/* Error Alert */}
         {error && (
-          <div className="mt-4 p-3 bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs rounded-xl font-medium">
+          <div className="mt-3 p-3 bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs rounded-xl font-medium shrink-0">
             {error}
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pr-1 mt-3 space-y-3.5">
           
           {/* Cliente e Empresa */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Nome do Cliente / Contato *
@@ -168,7 +168,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({
           </div>
 
           {/* Qual é o Serviço e Valor */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-semibold text-blue-400 mb-1 flex items-center gap-1">
                 <Briefcase className="w-3.5 h-3.5" />
@@ -224,7 +224,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({
           )}
 
           {/* Situação em que se encontra & Responsável */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-semibold text-amber-400 mb-1">
                 Situação da Proposta / Lead *
@@ -245,7 +245,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
                 <UserCheck className="w-3.5 h-3.5 text-blue-400" />
-                <span>Responsável na Agência</span>
+                <span>Responsável</span>
               </label>
               <input
                 type="text"
@@ -257,8 +257,8 @@ export const LeadModal: React.FC<LeadModalProps> = ({
             </div>
           </div>
 
-          {/* Etapa no Funil & Origem */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Etapa e Origem */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Etapa no Pipeline
@@ -295,7 +295,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({
           </div>
 
           {/* Telefone e Email */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Telefone / WhatsApp
@@ -329,26 +329,26 @@ export const LeadModal: React.FC<LeadModalProps> = ({
               Observações e Alinhamento
             </label>
             <textarea
-              rows={3}
-              placeholder="Detalhes da proposta, escopo do contrato, data de reunião, feedback do cliente..."
+              rows={2}
+              placeholder="Detalhes da proposta, data da reunião, feedback..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-none placeholder:text-slate-500"
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          {/* Footer actions inside form */}
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/25"
+              className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/25"
             >
               {initialLead ? 'Salvar Alterações' : 'Cadastrar Lead'}
             </button>

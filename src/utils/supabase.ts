@@ -1,9 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Lead } from '../types';
-import { INITIAL_LEADS } from '../data/mockLeads';
 
 const STORAGE_KEYS = {
-  LEADS_LOCAL: 'df_digital_leads_local_v2',
+  LEADS_LOCAL: 'df_digital_leads_live_v1',
   SUPABASE_URL: 'df_digital_supabase_url',
   SUPABASE_KEY: 'df_digital_supabase_key',
 };
@@ -59,13 +58,12 @@ export function loadLocalLeads(): Lead[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.LEADS_LOCAL);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.LEADS_LOCAL, JSON.stringify(INITIAL_LEADS));
-      return INITIAL_LEADS;
+      return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_LEADS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return INITIAL_LEADS;
+    return [];
   }
 }
 
@@ -93,11 +91,7 @@ export async function fetchRemoteLeads(): Promise<Lead[]> {
   }
 
   if (!data || data.length === 0) {
-    // If remote table is empty, seed it with initial leads
-    for (const lead of INITIAL_LEADS) {
-      await upsertRemoteLead(lead);
-    }
-    return INITIAL_LEADS;
+    return [];
   }
 
   return data.map((item: any) => ({

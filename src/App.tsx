@@ -18,7 +18,6 @@ import {
   getSupabase 
 } from './utils/supabase';
 import { exportLeadsToCSV } from './utils/csvExport';
-import { INITIAL_LEADS } from './data/mockLeads';
 
 export const App: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>(() => loadLocalLeads());
@@ -168,18 +167,6 @@ export const App: React.FC = () => {
     }
   };
 
-  // Reset to initial demo leads
-  const handleResetData = async () => {
-    if (window.confirm('Deseja recarregar a lista padrão de demonstração da DF Digital?')) {
-      setLeads(INITIAL_LEADS);
-      saveLocalLeads(INITIAL_LEADS);
-      if (isCloudConnected()) {
-        for (const lead of INITIAL_LEADS) {
-          await upsertRemoteLead(lead);
-        }
-      }
-    }
-  };
 
   // Filtered & Sorted Leads
   const filteredLeads = useMemo(() => {
@@ -246,7 +233,6 @@ export const App: React.FC = () => {
           setIsModalOpen(true);
         }}
         onExportCSV={() => exportLeadsToCSV(filteredLeads)}
-        onResetData={handleResetData}
         onOpenCloudSync={() => setIsCloudSyncOpen(true)}
         isCloudConnected={hasCloud}
       />
@@ -282,6 +268,10 @@ export const App: React.FC = () => {
               setIsModalOpen(true);
             }}
             onDeleteLead={(lead) => setLeadToDelete(lead)}
+            onNewLead={() => {
+              setEditingLead(null);
+              setIsModalOpen(true);
+            }}
           />
         ) : (
           <TableView
