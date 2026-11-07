@@ -6,23 +6,19 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { TableView } from './components/TableView';
 import { LeadModal } from './components/LeadModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
-import { CloudSyncModal } from './components/CloudSyncModal';
 import { Lead, LeadStatus, ProposalStatus } from './types';
 import { 
-  loadLocalLeads, 
-  saveLocalLeads, 
   fetchRemoteLeads, 
   upsertRemoteLead, 
   deleteRemoteLead, 
-  isCloudConnected,
   getSupabase 
 } from './utils/supabase';
 import { exportLeadsToCSV } from './utils/csvExport';
 
 export const App: React.FC = () => {
-  const [leads, setLeads] = useState<Lead[]>(() => loadLocalLeads());
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
-  const [hasCloud, setHasCloud] = useState<boolean>(() => isCloudConnected());
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,40 +29,35 @@ export const App: React.FC = () => {
 
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCloudSyncOpen, setIsCloudSyncOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
-  // Sync leads from Cloud or Local
+  // Sync leads from Supabase Cloud
   const refreshLeads = useCallback(async () => {
-    const cloudActive = isCloudConnected();
-    setHasCloud(cloudActive);
-    if (cloudActive) {
-      try {
-        const remoteData = await fetchRemoteLeads();
-        setLeads(remoteData);
-        saveLocalLeads(remoteData);
-      } catch (err) {
-        console.error('Erro ao buscar dados remotos:', err);
-      }
+    try {
+      const remoteData = await fetchRemoteLeads();
+      setLeads(remoteData);
+    } catch (err) {
+      console.error('Erro ao buscar dados da nuvem:', err);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  // Initial load & Supabase Realtime channel subscription
+  // Initial load & Supabase Realtime channel subscription (Auto-sync between partners!)
   useEffect(() => {
     refreshLeads();
 
     const supabase = getSupabase();
     if (!supabase) return;
 
-    // Listen to real-time changes made by the partner
+    // Listen to real-time changes: whenever user or partner updates, inserts, or deletes a lead
     const channel = supabase
-      .channel('df-digital-leads-realtime')
+      .channel('df-digital-realtime-leads')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'leads' },
         () => {
-          // Re-fetch when partner updates, inserts, or deletes a lead
           refreshLeads();
         }
       )
@@ -77,43 +68,36 @@ export const App: React.FC = () => {
     };
   }, [refreshLeads]);
 
-  // Persist local leads whenever state changes
-  useEffect(() => {
-    saveLocalLeads(leads);
-  }, [leads]);
-
   // Save Lead (Create or Edit)
   const handleSaveLead = async (leadData: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) => {
     const now = new Date().toISOString();
-    let updatedLead: Lead;
+    let targetLead: Lead;
 
     if (leadData.id) {
       // Edit
       const existing = leads.find((l) => l.id === leadData.id);
-      updatedLead = {
+      targetLead = {
         ...leadData,
         id: leadData.id,
         createdAt: existing ? existing.createdAt : now,
         updatedAt: now,
       };
 
-      setLeads((prev) => prev.map((l) => (l.id === leadData.id ? updatedLead : l)));
+      setLeads((prev) => prev.map((l) => (l.id === leadData.id ? targetLead : l)));
     } else {
       // Create
-      updatedLead = {
+      targetLead = {
         ...leadData,
         id: `lead-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
         createdAt: now,
         updatedAt: now,
       };
 
-      setLeads((prev) => [updatedLead, ...prev]);
+      setLeads((prev) => [targetLead, ...prev]);
     }
 
-    // Push to Supabase if connected
-    if (isCloudConnected()) {
-      await upsertRemoteLead(updatedLead);
-    }
+    // Persist to Cloud for both partners
+    await upsertRemoteLead(targetLead);
   };
 
   // Quick Status change (Pipeline Stage)
@@ -128,10 +112,7 @@ export const App: React.FC = () => {
     };
 
     setLeads((prev) => prev.map((l) => (l.id === leadId ? updatedLead : l)));
-
-    if (isCloudConnected()) {
-      await upsertRemoteLead(updatedLead);
-    }
+    await upsertRemoteLead(updatedLead);
   };
 
   // Quick Proposal Status change (Situação: aprovado, esperando aprovação, etc.)
@@ -142,16 +123,12 @@ export const App: React.FC = () => {
     const updatedLead: Lead = {
       ...targetLead,
       proposalStatus: newStatus,
-      // Se aprovado, move opcionalmente para 'ganho'
       status: newStatus === 'aprovado' ? 'ganho' : targetLead.status,
       updatedAt: new Date().toISOString(),
     };
 
     setLeads((prev) => prev.map((l) => (l.id === leadId ? updatedLead : l)));
-
-    if (isCloudConnected()) {
-      await upsertRemoteLead(updatedLead);
-    }
+    await upsertRemoteLead(updatedLead);
   };
 
   // Delete lead
@@ -160,13 +137,9 @@ export const App: React.FC = () => {
       const id = leadToDelete.id;
       setLeads((prev) => prev.filter((l) => l.id !== id));
       setLeadToDelete(null);
-
-      if (isCloudConnected()) {
-        await deleteRemoteLead(id);
-      }
+      await deleteRemoteLead(id);
     }
   };
-
 
   // Filtered & Sorted Leads
   const filteredLeads = useMemo(() => {
@@ -233,12 +206,10 @@ export const App: React.FC = () => {
           setIsModalOpen(true);
         }}
         onExportCSV={() => exportLeadsToCSV(filteredLeads)}
-        onOpenCloudSync={() => setIsCloudSyncOpen(true)}
-        isCloudConnected={hasCloud}
       />
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* KPI Metrics Summary */}
         <MetricsCards leads={leads} />
 
@@ -259,7 +230,12 @@ export const App: React.FC = () => {
         />
 
         {/* View Mode: Kanban vs Table */}
-        {viewMode === 'kanban' ? (
+        {isLoading ? (
+          <div className="bg-[#0F172A]/90 rounded-2xl border border-slate-800 p-12 text-center shadow-xl">
+            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs text-slate-400">Carregando dados da DF DIGITAL...</p>
+          </div>
+        ) : viewMode === 'kanban' ? (
           <KanbanBoard
             leads={filteredLeads}
             onUpdateStatus={handleUpdateStatus}
@@ -303,12 +279,6 @@ export const App: React.FC = () => {
         lead={leadToDelete}
         onClose={() => setLeadToDelete(null)}
         onConfirm={handleConfirmDelete}
-      />
-
-      <CloudSyncModal
-        isOpen={isCloudSyncOpen}
-        onClose={() => setIsCloudSyncOpen(false)}
-        onConfigSaved={refreshLeads}
       />
     </div>
   );
