@@ -5,10 +5,8 @@ import {
   LeadSource, 
   LeadStatus, 
   ServiceType, 
-  ProposalStatus, 
   LEAD_COLUMNS, 
   SERVICE_OPTIONS, 
-  PROPOSAL_STATUS_CONFIG, 
   SOURCE_LABELS 
 } from '../types';
 
@@ -29,11 +27,10 @@ export const LeadModal: React.FC<LeadModalProps> = ({
   const [company, setCompany] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [status, setStatus] = useState<LeadStatus>('novo');
+  const [status, setStatus] = useState<LeadStatus>('proposta');
   const [source, setSource] = useState<LeadSource>('instagram');
   const [service, setService] = useState<ServiceType>('trafego_pago');
   const [serviceNameCustom, setServiceNameCustom] = useState('');
-  const [proposalStatus, setProposalStatus] = useState<ProposalStatus>('esperando_aprovacao');
   const [responsible, setResponsible] = useState('Você');
   const [value, setValue] = useState('');
   const [notes, setNotes] = useState('');
@@ -45,11 +42,10 @@ export const LeadModal: React.FC<LeadModalProps> = ({
       setCompany(initialLead.company || '');
       setEmail(initialLead.email || '');
       setPhone(initialLead.phone || '');
-      setStatus(initialLead.status);
+      setStatus(initialLead.status || 'proposta');
       setSource(initialLead.source);
       setService(initialLead.service || 'trafego_pago');
       setServiceNameCustom(initialLead.serviceNameCustom || '');
-      setProposalStatus(initialLead.proposalStatus || 'esperando_aprovacao');
       setResponsible(initialLead.responsible || 'Você');
       setValue(initialLead.value ? initialLead.value.toString() : '');
       setNotes(initialLead.notes || '');
@@ -58,11 +54,10 @@ export const LeadModal: React.FC<LeadModalProps> = ({
       setCompany('');
       setEmail('');
       setPhone('');
-      setStatus('novo');
+      setStatus('proposta');
       setSource('instagram');
       setService('trafego_pago');
       setServiceNameCustom('');
-      setProposalStatus('esperando_aprovacao');
       setResponsible('Você');
       setValue('');
       setNotes('');
@@ -75,7 +70,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setError('Por favor, informe o nome do cliente / lead.');
+      setError('Por favor, informe o nome do cliente / contato.');
       return;
     }
 
@@ -91,7 +86,6 @@ export const LeadModal: React.FC<LeadModalProps> = ({
       source,
       service,
       serviceNameCustom: service === 'outro' ? serviceNameCustom.trim() : undefined,
-      proposalStatus,
       responsible: responsible.trim(),
       value: isNaN(numericValue) ? 0 : numericValue,
       notes: notes.trim(),
@@ -172,7 +166,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({
             <div>
               <label className="block text-xs font-semibold text-blue-400 mb-1 flex items-center gap-1">
                 <Briefcase className="w-3.5 h-3.5" />
-                <span>Qual é o Serviço em Questão? *</span>
+                <span>Serviço *</span>
               </label>
               <select
                 value={service}
@@ -223,20 +217,20 @@ export const LeadModal: React.FC<LeadModalProps> = ({
             </div>
           )}
 
-          {/* Situação em que se encontra & Responsável */}
+          {/* Status (Proposta Enviada / Aprovado / Perdido) & Responsável */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs font-semibold text-amber-400 mb-1">
-                Situação da Proposta / Lead *
+              <label className="block text-xs font-semibold text-emerald-400 mb-1">
+                Status Inicial *
               </label>
               <select
-                value={proposalStatus}
-                onChange={(e) => setProposalStatus(e.target.value as ProposalStatus)}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 cursor-pointer"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as LeadStatus)}
+                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 cursor-pointer"
               >
-                {(Object.keys(PROPOSAL_STATUS_CONFIG) as ProposalStatus[]).map((st) => (
-                  <option key={st} value={st} className="bg-slate-900 text-white">
-                    {PROPOSAL_STATUS_CONFIG[st].label}
+                {LEAD_COLUMNS.map((col) => (
+                  <option key={col.id} value={col.id} className="bg-slate-900 text-white font-medium">
+                    {col.title}
                   </option>
                 ))}
               </select>
@@ -257,41 +251,22 @@ export const LeadModal: React.FC<LeadModalProps> = ({
             </div>
           </div>
 
-          {/* Etapa e Origem */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Etapa no Pipeline
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as LeadStatus)}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 cursor-pointer"
-              >
-                {LEAD_COLUMNS.map((col) => (
-                  <option key={col.id} value={col.id} className="bg-slate-900 text-white">
-                    {col.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Canal de Origem
-              </label>
-              <select
-                value={source}
-                onChange={(e) => setSource(e.target.value as LeadSource)}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 cursor-pointer"
-              >
-                {(Object.keys(SOURCE_LABELS) as LeadSource[]).map((src) => (
-                  <option key={src} value={src} className="bg-slate-900 text-white">
-                    {SOURCE_LABELS[src].label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Canal de Origem */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">
+              Canal de Origem
+            </label>
+            <select
+              value={source}
+              onChange={(e) => setSource(e.target.value as LeadSource)}
+              className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 cursor-pointer"
+            >
+              {(Object.keys(SOURCE_LABELS) as LeadSource[]).map((src) => (
+                <option key={src} value={src} className="bg-slate-900 text-white">
+                  {SOURCE_LABELS[src].label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Telefone e Email */}
@@ -326,11 +301,11 @@ export const LeadModal: React.FC<LeadModalProps> = ({
           {/* Observações */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Observações e Alinhamento
+              Observações
             </label>
             <textarea
               rows={2}
-              placeholder="Detalhes da proposta, data da reunião, feedback..."
+              placeholder="Detalhes da proposta, feedback do cliente..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 resize-none placeholder:text-slate-500"

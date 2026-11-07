@@ -6,7 +6,7 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { TableView } from './components/TableView';
 import { LeadModal } from './components/LeadModal';
 import { DeleteConfirmModal } from './components/DeleteConfirmModal';
-import { Lead, LeadStatus, ProposalStatus } from './types';
+import { Lead, LeadStatus } from './types';
 import { 
   fetchRemoteLeads, 
   upsertRemoteLead, 
@@ -24,7 +24,6 @@ export const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [serviceFilter, setServiceFilter] = useState('all');
-  const [proposalStatusFilter, setProposalStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   // Modals state
@@ -51,7 +50,7 @@ export const App: React.FC = () => {
     const supabase = getSupabase();
     if (!supabase) return;
 
-    // Listen to real-time changes: whenever user or partner updates, inserts, or deletes a lead
+    // Listen to real-time changes
     const channel = supabase
       .channel('df-digital-realtime-leads')
       .on(
@@ -96,11 +95,10 @@ export const App: React.FC = () => {
       setLeads((prev) => [targetLead, ...prev]);
     }
 
-    // Persist to Cloud for both partners
     await upsertRemoteLead(targetLead);
   };
 
-  // Quick Status change (Pipeline Stage)
+  // Quick Status change (Proposta Enviada / Aprovado / Perdido)
   const handleUpdateStatus = async (leadId: string, newStatus: LeadStatus) => {
     const targetLead = leads.find((l) => l.id === leadId);
     if (!targetLead) return;
@@ -108,22 +106,6 @@ export const App: React.FC = () => {
     const updatedLead: Lead = {
       ...targetLead,
       status: newStatus,
-      updatedAt: new Date().toISOString(),
-    };
-
-    setLeads((prev) => prev.map((l) => (l.id === leadId ? updatedLead : l)));
-    await upsertRemoteLead(updatedLead);
-  };
-
-  // Quick Proposal Status change (Situação: aprovado, esperando aprovação, etc.)
-  const handleUpdateProposalStatus = async (leadId: string, newStatus: ProposalStatus) => {
-    const targetLead = leads.find((l) => l.id === leadId);
-    if (!targetLead) return;
-
-    const updatedLead: Lead = {
-      ...targetLead,
-      proposalStatus: newStatus,
-      status: newStatus === 'aprovado' ? 'ganho' : targetLead.status,
       updatedAt: new Date().toISOString(),
     };
 
@@ -158,18 +140,13 @@ export const App: React.FC = () => {
           }
         }
 
-        // Pipeline Status
+        // Status Filter
         if (statusFilter !== 'all' && lead.status !== statusFilter) {
           return false;
         }
 
         // Service Filter
         if (serviceFilter !== 'all' && lead.service !== serviceFilter) {
-          return false;
-        }
-
-        // Proposal Status (Situação)
-        if (proposalStatusFilter !== 'all' && lead.proposalStatus !== proposalStatusFilter) {
           return false;
         }
 
@@ -193,7 +170,7 @@ export const App: React.FC = () => {
         }
         return 0;
       });
-  }, [leads, searchQuery, statusFilter, serviceFilter, proposalStatusFilter, sortBy]);
+  }, [leads, searchQuery, statusFilter, serviceFilter, sortBy]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#070B14] text-slate-100 selection:bg-blue-500 selection:text-white">
@@ -221,8 +198,6 @@ export const App: React.FC = () => {
           onStatusChange={setStatusFilter}
           serviceFilter={serviceFilter}
           onServiceChange={setServiceFilter}
-          proposalStatusFilter={proposalStatusFilter}
-          onProposalStatusChange={setProposalStatusFilter}
           sortBy={sortBy}
           onSortChange={setSortBy}
           totalFiltered={filteredLeads.length}
@@ -253,7 +228,6 @@ export const App: React.FC = () => {
           <TableView
             leads={filteredLeads}
             onUpdateStatus={handleUpdateStatus}
-            onUpdateProposalStatus={handleUpdateProposalStatus}
             onEditLead={(lead) => {
               setEditingLead(lead);
               setIsModalOpen(true);

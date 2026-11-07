@@ -1,8 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Lead } from '../types';
+import { Lead, LeadStatus } from '../types';
 
-// Credenciais integradas nativamente para DF DIGITAL
-// Sincroniza automaticamente entre você e seu sócio em qualquer dispositivo!
 const DEFAULT_SUPABASE_URL = 'https://uplasakanepwxtmtlvzk.supabase.co';
 const DEFAULT_SUPABASE_KEY = 'sb_publishable_r8tuSSViYTu5EBErzVh-Ng_NeEf4hZn';
 
@@ -17,6 +15,13 @@ export function getSupabase(): SupabaseClient {
 
 export function isCloudConnected(): boolean {
   return true;
+}
+
+// Mapeador de compatibilidade para os novos 3 status
+function normalizeStatus(rawStatus: string): LeadStatus {
+  if (rawStatus === 'aprovado' || rawStatus === 'ganho') return 'aprovado';
+  if (rawStatus === 'perdido' || rawStatus === 'recusado') return 'perdido';
+  return 'proposta'; // padrão para proposta enviada / em andamento
 }
 
 // Buscar leads diretamente da nuvem
@@ -40,12 +45,11 @@ export async function fetchRemoteLeads(): Promise<Lead[]> {
       company: item.company || '',
       email: item.email || '',
       phone: item.phone || '',
-      status: item.status || 'novo',
+      status: normalizeStatus(item.status || item.proposal_status),
       source: item.source || 'outro',
       service: item.service || 'trafego_pago',
       serviceNameCustom: item.service_name_custom,
       value: Number(item.value) || 0,
-      proposalStatus: item.proposal_status || 'esperando_aprovacao',
       responsible: item.responsible || 'Geral',
       notes: item.notes || '',
       createdAt: item.created_at || new Date().toISOString(),
@@ -71,7 +75,7 @@ export async function upsertRemoteLead(lead: Lead): Promise<void> {
       service: lead.service,
       service_name_custom: lead.serviceNameCustom || null,
       value: lead.value,
-      proposal_status: lead.proposalStatus,
+      proposal_status: lead.status, // sincroniza com a coluna original
       responsible: lead.responsible || null,
       notes: lead.notes,
       created_at: lead.createdAt,

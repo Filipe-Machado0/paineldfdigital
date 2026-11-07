@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, TrendingUp, CheckCircle2, DollarSign } from 'lucide-react';
+import { Users, Send, CheckCircle2, XCircle } from 'lucide-react';
 import { Lead } from '../types';
 import { formatCurrency } from '../utils/formatters';
 
@@ -10,17 +10,22 @@ interface MetricsCardsProps {
 export const MetricsCards: React.FC<MetricsCardsProps> = ({ leads }) => {
   const totalLeads = leads.length;
   
-  // Pipeline ativo (novo, contato, qualificado, proposta)
-  const activeLeads = leads.filter(l => !['ganho', 'perdido'].includes(l.status));
-  const pipelineValue = activeLeads.reduce((acc, curr) => acc + (curr.value || 0), 0);
+  // Propostas Enviadas (em negociação)
+  const sentProposals = leads.filter(l => l.status === 'proposta');
+  const sentProposalsValue = sentProposals.reduce((acc, curr) => acc + (curr.value || 0), 0);
 
-  // Ganhos
-  const wonLeads = leads.filter(l => l.status === 'ganho');
-  const wonValue = wonLeads.reduce((acc, curr) => acc + (curr.value || 0), 0);
+  // Aprovados
+  const approvedLeads = leads.filter(l => l.status === 'aprovado');
+  const approvedValue = approvedLeads.reduce((acc, curr) => acc + (curr.value || 0), 0);
 
-  // Aguardando aprovação
-  const waitingApproval = leads.filter(l => l.proposalStatus === 'esperando_aprovacao');
-  const waitingApprovalValue = waitingApproval.reduce((acc, curr) => acc + (curr.value || 0), 0);
+  // Perdidos
+  const lostLeads = leads.filter(l => l.status === 'perdido');
+  const lostValue = lostLeads.reduce((acc, curr) => acc + (curr.value || 0), 0);
+
+  // Taxa de conversão
+  const conversionRate = totalLeads > 0 
+    ? Math.round((approvedLeads.length / totalLeads) * 100) 
+    : 0;
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-4 sm:mb-6">
@@ -37,56 +42,36 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ leads }) => {
         <div className="mt-2 sm:mt-3 flex items-baseline gap-1.5">
           <span className="text-xl sm:text-2xl font-black text-white">{totalLeads}</span>
           <span className="text-[10px] sm:text-xs text-slate-400 truncate">
-            ({activeLeads.length} ativas)
+            ({conversionRate}% conv.)
           </span>
         </div>
       </div>
 
-      {/* Pipeline Aberto */}
-      <div className="relative group bg-[#0F172A]/90 p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-800 shadow-lg overflow-hidden hover:border-cyan-500/40 transition-all">
+      {/* Propostas Enviadas */}
+      <div className="relative group bg-[#0F172A]/90 p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-800 shadow-lg overflow-hidden hover:border-blue-500/40 transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">
-            Pipeline Aberto
+          <span className="text-[10px] sm:text-[11px] font-bold text-blue-400 uppercase tracking-wider truncate">
+            Proposta Enviada
           </span>
-          <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
-            <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
+            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
         </div>
         <div className="mt-2 sm:mt-3">
           <span className="text-base sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 block truncate">
-            {formatCurrency(pipelineValue)}
+            {formatCurrency(sentProposalsValue)}
           </span>
           <span className="text-[10px] text-slate-400 hidden sm:block mt-0.5">
-            {activeLeads.length} propostas em jogo
+            {sentProposals.length} propostas em análise
           </span>
         </div>
       </div>
 
-      {/* Esperando Aprovação */}
-      <div className="relative group bg-[#0F172A]/90 p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-800 shadow-lg overflow-hidden hover:border-amber-500/40 transition-all">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">
-            Aguardando Aceite
-          </span>
-          <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
-            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </div>
-        </div>
-        <div className="mt-2 sm:mt-3">
-          <span className="text-base sm:text-2xl font-black text-amber-400 block truncate">
-            {formatCurrency(waitingApprovalValue)}
-          </span>
-          <span className="text-[10px] text-amber-400/80 hidden sm:block mt-0.5">
-            {waitingApproval.length} propostas
-          </span>
-        </div>
-      </div>
-
-      {/* Receita Fechada */}
+      {/* Aprovados */}
       <div className="relative group bg-[#0F172A]/90 p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-800 shadow-lg overflow-hidden hover:border-emerald-500/40 transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">
-            Contratos Ganhos
+          <span className="text-[10px] sm:text-[11px] font-bold text-emerald-400 uppercase tracking-wider truncate">
+            Aprovado
           </span>
           <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
             <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -94,10 +79,30 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({ leads }) => {
         </div>
         <div className="mt-2 sm:mt-3">
           <span className="text-base sm:text-2xl font-black text-emerald-400 block truncate">
-            {formatCurrency(wonValue)}
+            {formatCurrency(approvedValue)}
           </span>
           <span className="text-[10px] text-emerald-400/80 hidden sm:block mt-0.5">
-            {wonLeads.length} contratos fechados
+            {approvedLeads.length} contratos fechados
+          </span>
+        </div>
+      </div>
+
+      {/* Perdidos */}
+      <div className="relative group bg-[#0F172A]/90 p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-800 shadow-lg overflow-hidden hover:border-rose-500/40 transition-all">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] sm:text-[11px] font-bold text-rose-400 uppercase tracking-wider truncate">
+            Perdido
+          </span>
+          <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0">
+            <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </div>
+        </div>
+        <div className="mt-2 sm:mt-3">
+          <span className="text-base sm:text-2xl font-black text-rose-400 block truncate">
+            {formatCurrency(lostValue)}
+          </span>
+          <span className="text-[10px] text-slate-400 hidden sm:block mt-0.5">
+            {lostLeads.length} não aprovados
           </span>
         </div>
       </div>

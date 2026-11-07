@@ -1,4 +1,4 @@
-import { Lead, LEAD_COLUMNS, SERVICE_OPTIONS, PROPOSAL_STATUS_CONFIG, SOURCE_LABELS } from '../types';
+import { Lead, LEAD_COLUMNS, SERVICE_OPTIONS, SOURCE_LABELS } from '../types';
 
 export function exportLeadsToCSV(leads: Lead[]): void {
   const headers = [
@@ -7,8 +7,7 @@ export function exportLeadsToCSV(leads: Lead[]): void {
     'Empresa',
     'Servico',
     'Valor do Servico (R$)',
-    'Situacao da Proposta',
-    'Etapa no Funil',
+    'Status',
     'Responsavel',
     'Email',
     'Telefone',
@@ -21,7 +20,6 @@ export function exportLeadsToCSV(leads: Lead[]): void {
     const col = LEAD_COLUMNS.find((c) => c.id === l.status);
     const src = SOURCE_LABELS[l.source] || SOURCE_LABELS.outro;
     const srv = l.service === 'outro' && l.serviceNameCustom ? l.serviceNameCustom : (SERVICE_OPTIONS[l.service] || l.service);
-    const propStatus = PROPOSAL_STATUS_CONFIG[l.proposalStatus]?.label || l.proposalStatus;
     
     return [
       `"${l.id}"`,
@@ -29,7 +27,6 @@ export function exportLeadsToCSV(leads: Lead[]): void {
       `"${(l.company || '').replace(/"/g, '""')}"`,
       `"${srv.replace(/"/g, '""')}"`,
       l.value || 0,
-      `"${propStatus.replace(/"/g, '""')}"`,
       `"${col ? col.title : l.status}"`,
       `"${(l.responsible || '').replace(/"/g, '""')}"`,
       `"${(l.email || '').replace(/"/g, '""')}"`,

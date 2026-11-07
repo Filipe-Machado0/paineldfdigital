@@ -12,17 +12,15 @@ import {
 import { 
   Lead, 
   LeadStatus, 
-  ProposalStatus, 
   LEAD_COLUMNS, 
   SERVICE_OPTIONS, 
-  PROPOSAL_STATUS_CONFIG 
+  STATUS_CONFIG 
 } from '../types';
 import { formatCurrency, formatDate } from '../utils/formatters';
 
 interface TableViewProps {
   leads: Lead[];
   onUpdateStatus: (leadId: string, newStatus: LeadStatus) => void;
-  onUpdateProposalStatus: (leadId: string, newStatus: ProposalStatus) => void;
   onEditLead: (lead: Lead) => void;
   onDeleteLead: (lead: Lead) => void;
 }
@@ -30,7 +28,6 @@ interface TableViewProps {
 export const TableView: React.FC<TableViewProps> = ({
   leads,
   onUpdateStatus,
-  onUpdateProposalStatus,
   onEditLead,
   onDeleteLead,
 }) => {
@@ -44,15 +41,14 @@ export const TableView: React.FC<TableViewProps> = ({
 
   return (
     <div className="mb-12">
-      {/* Mobile Card List View (Visible only on phone screens) */}
+      {/* Mobile Card List View */}
       <div className="sm:hidden space-y-3">
         {leads.map((lead) => {
           const serviceName = lead.service === 'outro' && lead.serviceNameCustom
             ? lead.serviceNameCustom
             : SERVICE_OPTIONS[lead.service] || lead.service;
 
-          const proposalCfg = PROPOSAL_STATUS_CONFIG[lead.proposalStatus] || PROPOSAL_STATUS_CONFIG.esperando_aprovacao;
-          const currentStatusCol = LEAD_COLUMNS.find((c) => c.id === lead.status);
+          const statusCfg = STATUS_CONFIG[lead.status] || STATUS_CONFIG.proposta;
           const cleanPhone = lead.phone.replace(/\D/g, '');
 
           return (
@@ -97,37 +93,20 @@ export const TableView: React.FC<TableViewProps> = ({
                 </span>
               </div>
 
-              {/* Status and Proposal dropdowns */}
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Situação:</label>
-                  <select
-                    value={lead.proposalStatus}
-                    onChange={(e) => onUpdateProposalStatus(lead.id, e.target.value as ProposalStatus)}
-                    className={`w-full text-xs font-semibold py-1.5 px-2 rounded-lg border cursor-pointer ${proposalCfg.badgeClass} bg-slate-900`}
-                  >
-                    {(Object.keys(PROPOSAL_STATUS_CONFIG) as ProposalStatus[]).map((key) => (
-                      <option key={key} value={key} className="bg-slate-900 text-white">
-                        {PROPOSAL_STATUS_CONFIG[key].label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] text-slate-400 mb-1">Etapa no Funil:</label>
-                  <select
-                    value={lead.status}
-                    onChange={(e) => onUpdateStatus(lead.id, e.target.value as LeadStatus)}
-                    className={`w-full text-xs font-semibold py-1.5 px-2 rounded-lg border border-slate-700 cursor-pointer ${currentStatusCol?.badgeBg} ${currentStatusCol?.badgeText}`}
-                  >
-                    {LEAD_COLUMNS.map((col) => (
-                      <option key={col.id} value={col.id} className="bg-slate-900 text-white">
-                        {col.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* Status Selector */}
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-1">Status do Lead:</label>
+                <select
+                  value={lead.status}
+                  onChange={(e) => onUpdateStatus(lead.id, e.target.value as LeadStatus)}
+                  className={`w-full text-xs font-bold py-2 px-3 rounded-lg border cursor-pointer ${statusCfg.badgeClass} bg-slate-900`}
+                >
+                  {LEAD_COLUMNS.map((col) => (
+                    <option key={col.id} value={col.id} className="bg-slate-900 text-white font-semibold">
+                      {col.title}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Mobile WhatsApp Button */}
@@ -161,17 +140,16 @@ export const TableView: React.FC<TableViewProps> = ({
         })}
       </div>
 
-      {/* Desktop Classic Table View (Hidden on mobile) */}
+      {/* Desktop Classic Table View */}
       <div className="hidden sm:block bg-[#0F172A]/90 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-900/90 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <th className="py-3.5 px-4 sm:px-6">Cliente &amp; Empresa</th>
-                <th className="py-3.5 px-4">Serviço em Questão</th>
+                <th className="py-3.5 px-4">Serviço</th>
                 <th className="py-3.5 px-4">Valor</th>
-                <th className="py-3.5 px-4">Situação da Proposta</th>
-                <th className="py-3.5 px-4">Etapa no Funil</th>
+                <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4">Responsável</th>
                 <th className="py-3.5 px-4">Contatos</th>
                 <th className="py-3.5 px-4 sm:px-6 text-right">Ações</th>
@@ -183,8 +161,7 @@ export const TableView: React.FC<TableViewProps> = ({
                   ? lead.serviceNameCustom
                   : SERVICE_OPTIONS[lead.service] || lead.service;
 
-                const proposalCfg = PROPOSAL_STATUS_CONFIG[lead.proposalStatus] || PROPOSAL_STATUS_CONFIG.esperando_aprovacao;
-                const currentStatusCol = LEAD_COLUMNS.find((c) => c.id === lead.status);
+                const statusCfg = STATUS_CONFIG[lead.status] || STATUS_CONFIG.proposta;
                 const cleanPhone = lead.phone.replace(/\D/g, '');
 
                 return (
@@ -220,26 +197,12 @@ export const TableView: React.FC<TableViewProps> = ({
 
                     <td className="py-3.5 px-4">
                       <select
-                        value={lead.proposalStatus}
-                        onChange={(e) => onUpdateProposalStatus(lead.id, e.target.value as ProposalStatus)}
-                        className={`text-xs font-semibold py-1 px-2.5 rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${proposalCfg.badgeClass} bg-slate-900`}
-                      >
-                        {(Object.keys(PROPOSAL_STATUS_CONFIG) as ProposalStatus[]).map((key) => (
-                          <option key={key} value={key} className="bg-slate-900 text-white">
-                            {PROPOSAL_STATUS_CONFIG[key].label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <select
                         value={lead.status}
                         onChange={(e) => onUpdateStatus(lead.id, e.target.value as LeadStatus)}
-                        className={`text-xs font-semibold py-1 px-2.5 rounded-lg border border-slate-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${currentStatusCol?.badgeBg} ${currentStatusCol?.badgeText}`}
+                        className={`text-xs font-bold py-1.5 px-3 rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${statusCfg.badgeClass} bg-slate-900`}
                       >
                         {LEAD_COLUMNS.map((col) => (
-                          <option key={col.id} value={col.id} className="bg-slate-900 text-white">
+                          <option key={col.id} value={col.id} className="bg-slate-900 text-white font-medium">
                             {col.title}
                           </option>
                         ))}

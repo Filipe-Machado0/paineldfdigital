@@ -18,7 +18,7 @@ import {
   LeadStatus, 
   LEAD_COLUMNS, 
   SERVICE_OPTIONS, 
-  PROPOSAL_STATUS_CONFIG, 
+  STATUS_CONFIG, 
   SOURCE_LABELS 
 } from '../types';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -40,8 +40,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 }) => {
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<LeadStatus | null>(null);
-  // Active stage tab on mobile view
-  const [mobileActiveStage, setMobileActiveStage] = useState<LeadStatus | 'all'>('novo');
+  const [mobileActiveStage, setMobileActiveStage] = useState<LeadStatus | 'all'>('proposta');
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
     e.dataTransfer.setData('text/plain', id);
@@ -86,7 +85,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     return null;
   };
 
-  // If there are zero leads in the whole board
+  // Zero leads in the board
   if (leads.length === 0) {
     return (
       <div className="bg-[#0F172A]/90 rounded-2xl border border-slate-800 p-8 sm:p-16 text-center shadow-2xl mb-12">
@@ -97,7 +96,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           Nenhum lead cadastrado ainda
         </h3>
         <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto mb-6">
-          Cadastre seu primeiro cliente ou oportunidade da DF DIGITAL para começar a gerenciar seu funil e fechar novos contratos!
+          Cadastre sua primeira oportunidade da DF DIGITAL para acompanhar as propostas e aprovações!
         </p>
         {onNewLead && (
           <button
@@ -105,20 +104,20 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs sm:text-sm font-bold shadow-lg shadow-blue-500/25 transition-all"
           >
             <Plus className="w-4 h-4" />
-            <span>Cadastrar Primeiro Lead</span>
+            <span>Cadastrar Novo Lead</span>
           </button>
         )}
       </div>
     );
   }
 
-  // Render individual lead card
+  // Render individual card
   const renderLeadCard = (lead: Lead) => {
     const serviceName = lead.service === 'outro' && lead.serviceNameCustom
       ? lead.serviceNameCustom
       : SERVICE_OPTIONS[lead.service] || lead.service;
 
-    const proposalCfg = PROPOSAL_STATUS_CONFIG[lead.proposalStatus] || PROPOSAL_STATUS_CONFIG.esperando_aprovacao;
+    const statusCfg = STATUS_CONFIG[lead.status] || STATUS_CONFIG.proposta;
     const sourceCfg = SOURCE_LABELS[lead.source] || SOURCE_LABELS.outro;
     const nextStatus = getNextStatus(lead.status);
     const prevStatus = getPrevStatus(lead.status);
@@ -134,14 +133,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           draggedLeadId === lead.id ? 'opacity-40 scale-95' : 'opacity-100'
         }`}
       >
-        {/* Top: Situation Badge & Actions */}
+        {/* Top: Status Badge & Quick Actions */}
         <div className="flex items-center justify-between gap-1 mb-2 sm:mb-2.5">
           <span
-            className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-md border ${proposalCfg.badgeClass}`}
-            title={`Situação: ${proposalCfg.label}`}
+            className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-md border ${statusCfg.badgeClass}`}
+            title={`Status: ${statusCfg.label}`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${proposalCfg.dotClass}`} />
-            <span className="truncate">{proposalCfg.label}</span>
+            <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dotClass}`} />
+            <span className="truncate">{statusCfg.label}</span>
           </span>
 
           <div className="flex items-center gap-1">
@@ -176,7 +175,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         </div>
 
         {/* Service in Question & Value */}
-        <div className="bg-slate-900/90 rounded-lg p-2 border border-slate-800 mb-2">
+        <div className="bg-slate-900/90 rounded-lg p-2.5 border border-slate-800 mb-2">
           <div className="flex items-center gap-1.5 text-blue-400 text-xs font-semibold">
             <Briefcase className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">{serviceName}</span>
@@ -203,7 +202,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           )}
         </div>
 
-        {/* Notes if available */}
+        {/* Notes snippet */}
         {lead.notes && (
           <div className="flex items-start gap-1 text-[11px] text-slate-300 bg-slate-900/60 border border-slate-800 rounded-md p-1.5 mb-2 line-clamp-2">
             <FileText className="w-3 h-3 text-blue-400 mt-0.5 shrink-0" />
@@ -211,7 +210,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           </div>
         )}
 
-        {/* WhatsApp Direct Button (Full width on mobile for easy thumb tap) */}
+        {/* Direct WhatsApp Button (Mobile ergonomic) */}
         {lead.phone && (
           <div className="pt-1 mb-2">
             <a
@@ -244,7 +243,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           </span>
         </div>
 
-        {/* Quick Stage Move Buttons (Touch friendly) */}
+        {/* Quick Stage Move Buttons */}
         <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-800">
           {prevStatus ? (
             <button
@@ -272,14 +271,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     );
   };
 
-  const columnsToRender = mobileActiveStage === 'all'
-    ? LEAD_COLUMNS
-    : LEAD_COLUMNS; // Desktop always renders all
-
   return (
     <div className="space-y-4">
-      {/* Mobile Stage Selector Tabs (Super friendly for smartphones!) */}
-      <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
+      {/* Mobile Stage Selector Tabs (Proposta Enviada / Aprovado / Perdido) */}
+      <div className="md:hidden flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
         <button
           onClick={() => setMobileActiveStage('all')}
           className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all border ${
@@ -313,10 +308,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         })}
       </div>
 
-      {/* Main Grid: On desktop shows all 6 columns. On mobile, if a stage is selected, shows that stage cleanly or shows horizontal scroll */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 pb-12 overflow-x-auto min-h-[550px]">
-        {columnsToRender.map((column) => {
-          // If on mobile and a specific stage is selected (and not 'all'), hide the other columns
+      {/* Main Grid: 3 Clean, Wide Columns (Proposta Enviada / Aprovado / Perdido) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-12 min-h-[500px]">
+        {LEAD_COLUMNS.map((column) => {
           const isHiddenOnMobile = mobileActiveStage !== 'all' && mobileActiveStage !== column.id;
           const columnLeads = leads.filter((lead) => lead.status === column.id);
           const columnTotalValue = columnLeads.reduce((sum, l) => sum + (l.value || 0), 0);
@@ -329,30 +323,30 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               onDragLeave={() => setDragOverColumn(null)}
               onDrop={(e) => handleDrop(e, column.id)}
               className={`${
-                isHiddenOnMobile ? 'hidden lg:flex' : 'flex'
-              } flex-col bg-[#0F172A]/70 rounded-2xl border transition-all p-3 shadow-xl ${
+                isHiddenOnMobile ? 'hidden md:flex' : 'flex'
+              } flex-col bg-[#0F172A]/70 rounded-2xl border transition-all p-3.5 sm:p-4 shadow-xl ${
                 isHovered
                   ? 'border-blue-500 bg-blue-950/30 shadow-blue-500/10'
                   : 'border-slate-800 hover:border-slate-700'
               }`}
             >
               {/* Column Header */}
-              <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
+              <div className="flex items-center justify-between pb-2.5 mb-3 border-b border-slate-800">
                 <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${column.accent}`} />
-                  <h2 className="text-xs font-bold text-slate-200 tracking-wider uppercase">
+                  <span className={`w-3 h-3 rounded-full ${column.accent} shadow-sm shadow-${column.accent}`} />
+                  <h2 className="text-sm font-bold text-slate-200 tracking-wider">
                     {column.title}
                   </h2>
                 </div>
-                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border border-current/20 ${column.badgeBg} ${column.badgeText}`}>
+                <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border border-current/20 ${column.badgeBg} ${column.badgeText}`}>
                   {columnLeads.length}
                 </span>
               </div>
 
               {/* Column Total */}
-              <div className="flex items-center justify-between text-[11px] text-slate-400 mb-3 px-1">
-                <span>Total:</span>
-                <span className="font-bold text-slate-200">
+              <div className="flex items-center justify-between text-xs text-slate-400 mb-3 px-1">
+                <span>Total nesta etapa:</span>
+                <span className="font-bold text-slate-200 text-sm">
                   {formatCurrency(columnTotalValue)}
                 </span>
               </div>
@@ -360,8 +354,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               {/* Cards List */}
               <div className="flex-1 flex flex-col gap-3 overflow-y-auto max-h-[calc(100vh-320px)] pr-0.5">
                 {columnLeads.length === 0 ? (
-                  <div className="h-24 sm:h-28 border border-dashed border-slate-800 rounded-xl flex items-center justify-center text-slate-500 text-xs text-center p-3">
-                    Nenhum lead nesta etapa
+                  <div className="h-28 border border-dashed border-slate-800 rounded-xl flex items-center justify-center text-slate-500 text-xs text-center p-3">
+                    Nenhum lead em {column.title.toLowerCase()}
                   </div>
                 ) : (
                   columnLeads.map((lead) => renderLeadCard(lead))
