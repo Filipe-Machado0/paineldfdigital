@@ -1,12 +1,13 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Lead, LeadStatus } from '../types';
 
-const DEFAULT_SUPABASE_URL = 'https://uplasakanepwxtmtlvzk.supabase.co';
-const DEFAULT_SUPABASE_KEY = 'sb_publishable_r8tuSSViYTu5EBErzVh-Ng_NeEf4hZn';
+const env = (typeof import.meta !== 'undefined' && (import.meta as any).env) || {};
+const SUPABASE_URL = env.VITE_SUPABASE_URL || 'https://hctgtcljfuutpxnumwih.supabase.co';
+const SUPABASE_KEY = env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_jPdHVVqGSi03dyGQxnDgKw_Ntqj3wx0';
 
 export const supabase: SupabaseClient = createClient(
-  DEFAULT_SUPABASE_URL,
-  DEFAULT_SUPABASE_KEY
+  SUPABASE_URL,
+  SUPABASE_KEY
 );
 
 export function getSupabase(): SupabaseClient {
